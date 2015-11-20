@@ -1,0 +1,13 @@
+#!/bin/sh
+
+# init function for the ActiveMQ service publisher, to export some variables.
+
+MSG_HOST=${MSG_HOST:-`hostname -f`}
+MSG_NETWORK=${MSG_NETWORK:-PROD}
+MSG_RPM_NAME=${MSG_RPM_NAME:-activemq}
+MSG_PID_FILE=${MSG_PID_FILE:-/var/run/activemq/activemq.pid}
+
+echo MSG_HOST=$MSG_HOST
+echo MSG_NETWORK=$MSG_NETWORK
+echo MSG_RPM_NAME=$MSG_RPM_NAME
+echo MSG_PID_FILE=$MSG_PID_FILE

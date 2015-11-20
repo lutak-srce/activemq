@@ -1,0 +1,179 @@
+#!/usr/bin/perl
+#+##############################################################################
+#                                                                              #
+# File: purge-broker                                                           #
+#                                                                              #
+# Description: purge broker by consuming unimportant messages                  #
+#                                                                              #
+#-##############################################################################
+
+# $Revision: 521 $
+
+#
+# used modules
+#
+
+use strict;
+use warnings;
+use sigtrap qw(die normal-signals);
+use POSIX qw(strftime);
+use TOM::Dir qw(dir_read);
+use TOM::Error qw(error_die);
+use TOM::Log qw(log_debug log_filter);
+use TOM::PidFile qw(pf_get pf_set pf_remove);
+use TOM::Proc qw(proc_run);
+
+#
+# constants
+#
+
+use constant MAXSIZE  => 5*1024*1024*1024; # 5 GB
+use constant MAXDAYS  => 30; # 1 month
+use constant PURGEDIR => "/var/lib/activemq/tmp/purged";
+use constant PIDFILE  => "/var/lib/activemq/tmp/purge-broker.pid";
+
+#
+# global variables
+#
+
+our($Debug, $Today);
+
+#
+# initialize
+#
+
+sub init () {
+    my($pid);
+
+    $| = 1;
+    $Debug = 0;
+    while (@ARGV and $ARGV[0] =~ /^--?d(ebug)?$/) {
+        $Debug++;
+        shift(@ARGV);
+    }
+    if ($Debug) {
+        $TOM::Log::Handler = \&TOM::Log::log_to_stderr;
+        log_filter("debug");
+    }
+    $pid = pf_get(PIDFILE);
+    error_die("another instance is running: %d", $pid) if $pid;
+    pf_set(PIDFILE, $$);
+    $Today = strftime("%Y-%m-%d", localtime(time()));
+    log_debug("today is %s", $Today);
+    unless (-d PURGEDIR) {
+        log_debug("mkdir %s", PURGEDIR);
+        mkdir(PURGEDIR) or error_die("cannot mkdir(%s): %s", PURGEDIR, $!);
+    }
+    log_debug("cd %s", PURGEDIR);
+    chdir(PURGEDIR) or error_die("cannot chdir(%s): %s", PURGEDIR, $!);
+    unless (-d $Today) {
+        log_debug("mkdir %s", $Today);
+        mkdir($Today) or error_die("cannot mkdir(%s): %s", $Today, $!);
+    }
+}
+
+#
+# compress directories
+#
+
+sub compress () {
+    my($name, $status);
+
+    foreach $name (@{ dir_read(".") }) {
+        next if $name eq $Today;
+        next unless -d $name;
+        log_debug("compressing %s", $name);
+        $status = proc_run(command => [ "tar", "czf", "$name.tgz", $name ]);
+        error_die("tar failed: %d", $status) if $status;
+        log_debug("removing %s", $name);
+        $status = proc_run(command => [ "rm", "-fr", $name ]);
+        error_die("rm failed: %d", $status) if $status;
+        log_debug("created %s (%d bytes)", "$name.tgz", -s "$name.tgz");
+    }
+}
+
+#
+# cleanup old compressed files
+#
+
+sub cleanup () {
+    my($name, %size, @names, $size);
+
+    # phase 0: collect names and sizes
+    foreach $name (@{ dir_read(".") }) {
+        next if $name eq $Today;
+        next unless -f $name;
+        $size{$name} = -s _;
+    }
+    @names = sort(keys(%size));
+
+    # phase 1: cleanup if too old
+    while (@names > MAXDAYS) {
+        $name = shift(@names);
+        log_debug("removing %s (too old)", $name);
+        unlink($name) or error_die("cannot unlink(%s): %s", $name, $!);
+    }
+
+    # phase 2: cleanup if too big
+    $size = 0;
+    foreach $name (@names) {
+        $size += $size{$name};
+    }
+    log_debug("total size is %d", $size);
+    while ($size > MAXSIZE) {
+        $name = shift(@names);
+        log_debug("removing %s (too big)", $name);
+        unlink($name) or error_die("cannot unlink(%s): %s", $name, $!);
+        $size -= $size{$name};
+    }
+}
+
+#
+# purge the broker
+#
+
+sub purge ($$$$) {
+    my($host, $port, $name, $pass) = @_;
+    my(@msak, $uri, $auth, $status);
+
+    $uri = sprintf("stomp://%s:%d", $host, $port);
+    $auth = sprintf("plain name=%s pass=%s", $name, $pass);
+    @msak = ("stompclt");
+    push(@msak, "--timeout-inactivity", 10);
+    push(@msak, "--incoming-broker-uri", $uri);
+    push(@msak, "--incoming-broker-auth", $auth);
+    push(@msak, "--outgoing-queue", "path=$Today");
+    push(@msak, "--subscribe", "destination=/queue/ActiveMQ.DLQ");
+    push(@msak, "--statistics") if $Debug;
+    push(@msak, "--debug") if $Debug > 1;
+    log_debug("purging %s", $uri);
+    $status = proc_run(command => \@msak);
+    error_die("stompclt failed: %d", $status) if $status;
+}
+
+#
+# cleanup
+#
+
+END {
+    pf_remove(PIDFILE);
+}
+
+#
+# just do it
+#
+#
+
+init();
+compress();
+cleanup();
+
+my $USERS_FILE="/etc/activemq/users.properties";
+open(USERS, $USERS_FILE ) or die("Could not open log file.");
+my @system_cred = grep(/^system=/, <USERS>);
+close(USERS);
+my @cred_array = split(/system=/,$system_cred[0]);
+my $password=$cred_array[1];
+chop($password);
+
+purge("localhost", 6163, "system", $password);

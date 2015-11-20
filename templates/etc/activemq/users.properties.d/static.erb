@@ -1,0 +1,9 @@
+#
+# JAAS users
+#
+guest=<%= scope.lookupvar('activemq::jaas_guest_password') %>
+jetty=<%= scope.lookupvar('activemq::jaas_jetty_password') %>
+monitor=<%= scope.lookupvar('activemq::jaas_monitor_password') %>
+system=<%= scope.lookupvar('activemq::jaas_system_password') %>
+broker=<%= scope.lookupvar('activemq::jaas_system_password') %>
+apel-reports=<%= scope.lookupvar('activemq::jaas_apel_password') %>

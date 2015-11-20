@@ -1,0 +1,49 @@
+#!/usr/bin/env python
+from optparse import OptionParser
+import subprocess
+import os
+import sys
+import datetime
+
+# The purpose of this script is to get DNs from gocdb with a certain url. The url will be provided by a cron
+# to the -u/--url flag of this script. The script will read the url and will pass it to grid2dns. grid2dns then, will
+# write a file with the new DNs at /etc/activemq/dns.properties.d/<file>. When the file is ready, we run update-jaas
+# to merge all content of dns.properties.d to dns.properties.
+
+# This script will get it's agrougment from activemq#<broker-name>.cfg file.
+
+parser = OptionParser()
+parser.add_option("-o", "--output", dest="filename",
+                  help="write dns to FILE", metavar="FILE")
+parser.add_option("-u", "--url", dest="url",
+                  help="gocdb URL", metavar="URL")
+parser.add_option("-j", "--jass-parent-directory", dest="jaas_parentd_path",
+                help="JAAS parent directory PATH", metavar="PATH")
+parser.add_option("-d", "--dry-run",
+                  action="store_true", dest="dry", default=False,
+                  help="print commands that will be executed and fail")
+(options, args) = parser.parse_args()
+
+grid2dns = ["grid2dns", "--cert-dir", "", "--type", "java", '--format', '{name}={dn}', "--output", options.filename, options.url]
+update_jaas = [os.path.join(options.jaas_parentd_path, 'update-jaas')]
+
+if options.dry:
+    print "grid2dns: %s" % grid2dns
+    print "JAAS: %s" % update_jaas
+    sys.exit(3)
+
+if subprocess.call(grid2dns) == 0:
+    print "%s: Running update JAAS..." % datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    if subprocess.call(update_jaas) == 0:
+        a = 1
+    else:
+        print "%s: Failled on update_jaas." % datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        sys.exit(2)
+else:
+    print "%s: Failled on grid2dns." % datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    sys.exit(1)
+    
+print "%s: Success." % datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+sys.exit(0)
+
+# Anastasis Andronidis <andronat@grid.auth.gr>

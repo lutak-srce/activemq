@@ -1,0 +1,14 @@
+#!/bin/sh
+#
+# update the JAAS files which are split using .d directories
+#
+
+PATH=/root/bin:/sbin:/bin:/usr/sbin:/usr/bin
+cd /usr/share/activemq/conf || exit 1
+[ "$(ls -A dns.properties.d)" ] && files="dns.properties.d/*" || files=/dev/null
+ugm --type user  --sort --output dns.properties $files || exit 1
+[ "$(ls -A users.properties.d)" ] && files="users.properties.d/*" || files=/dev/null
+ugm --type user  --sort --output users.properties $files || exit 1
+[ "$(ls -A groups.properties.d)" ] && files="groups.properties.d/*" || files=/dev/null
+ugm --type group --sort --output groups.properties $files || exit 1
+exit 0

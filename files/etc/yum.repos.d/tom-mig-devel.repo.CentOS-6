@@ -1,0 +1,5 @@
+[tom-mig-devel]
+name=Tom Mig Devel El 6 - $basearch
+baseurl=http://rpm.hellasgrid.gr/mash/centos6-tom-mig-devel/$basearch
+enabled=0
+gpgcheck=0
