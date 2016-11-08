@@ -23,7 +23,7 @@ class activemq::params {
   $jaas_system_password   = 'testpw'
   $jaas_apel_password     = 'testpw'
 
-  $additional_storage     = None
+  #$additional_storage     = 'None'
 
   $brokers_in_my_network  = []
 

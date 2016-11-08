@@ -26,16 +26,6 @@ class activemq (
 
 ) inherits activemq::params {
 
-  include apache
-  include apache::mod::proxy
-  include apache::mod::proxy_html
-  include apache::mod::proxy_http
-  #include apache::mod::authn_file
-  include apache::mod::ssl
-
-  apache::listen { '80': }
-  apache::listen { '443': }
-
   # tom-mig-devel repo for activemq
   include yum::repo::tommigdevel
 
@@ -232,15 +222,15 @@ file { '/etc/cron.d/purge-broker':
     require => Package['httpd'],
     notify  => Service['httpd'],
   }
-  file { '/etc/httpd/conf.d/activemq-httpd.conf':
-    ensure  => file,
-    source  => 'puppet:///private/etc/httpd/conf.d/activemq-httpd.conf',
-    owner   => root,
-    group   => root,
-    mode    => '0644',
-    require => Package['httpd'],
-    notify  => Service['httpd'],
-  }
+  #  file { '/etc/httpd/conf.d/activemq-httpd.conf':
+  #    ensure  => file,
+  #    source  => 'puppet:///private/etc/httpd/conf.d/activemq-httpd.conf',
+  #    owner   => root,
+  #    group   => root,
+  #    mode    => '0644',
+  #    require => Package['httpd'],
+  #    notify  => Service['httpd'],
+  #  }
   file { '/etc/httpd/activemq-webconsole.users':
     ensure  => file,
     source  => 'puppet:///private/etc/httpd/activemq-webconsole.users',
