@@ -93,25 +93,25 @@ class activemq (
     require => File['/etc/activemq/users.properties.d'],
   }
   file { '/etc/security/limits.d/activemq.conf':
-    ensure  => file,
-    source  => 'puppet:///modules/activemq/etc/security/limits.d/activemq.conf',
-    owner   => root,
-    group   => root,
-    mode    => '0644',
+    ensure => file,
+    source => 'puppet:///modules/activemq/etc/security/limits.d/activemq.conf',
+    owner  => root,
+    group  => root,
+    mode   => '0644',
   }
   file { '/etc/cron.d/glite-apel':
-    ensure  => file,
-    source  => 'puppet:///modules/activemq/etc/cron.d/glite-apel',
-    owner   => root,
-    group   => root,
-    mode    => '0644',
+    ensure => file,
+    source => 'puppet:///modules/activemq/etc/cron.d/glite-apel',
+    owner  => root,
+    group  => root,
+    mode   => '0644',
   }
 file { '/etc/cron.d/purge-broker':
-    ensure  => file,
-    source  => 'puppet:///modules/activemq/etc/cron.d/purge-broker',
-    owner   => root,
-    group   => root,
-    mode    => '0644',
+    ensure => file,
+    source => 'puppet:///modules/activemq/etc/cron.d/purge-broker',
+    owner  => root,
+    group  => root,
+    mode   => '0644',
   }
 
 
