@@ -26,9 +26,6 @@ class activemq (
 
 ) inherits activemq::params {
 
-  # tom-mig-devel repo for activemq
-  include yum::repo::tommigdevel
-
   # mbcg-utils package
   package { 'mbcg-utils':
     ensure     => latest,
