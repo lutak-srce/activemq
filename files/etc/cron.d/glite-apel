@@ -9,4 +9,6 @@ USER=root
 0 */4 * * * root /var/lib/activemq/bin/apel-sync -o /etc/activemq/dns.properties.d/apel-sync -u 'gocdb://goc.egi.eu/gocdbpi/public/?method=get_service_endpoint&service_type=gLite-APEL' -j /var/lib/activemq/bin >> /var/log/activemq/apel-sync
 0 */4 * * * root /var/lib/activemq/bin/apel-sync -o /etc/activemq/dns.properties.d/cloud-sync -u 'gocdb://goc.egi.eu/gocdbpi/public/?method=get_service_endpoint&service_type=eu.egi.cloud.accounting' -j /var/lib/activemq/bin >> /var/log/activemq/apel-sync
 
+0 */4 * * * root /var/lib/activemq/bin/apel-sync -o /etc/activemq/dns.properties.d/storage-sync -u 'gocdb://goc.egi.eu/gocdbpi/public/?method=get_service_endpoint&service_type=eu.egi.storage.accounting' -j /var/lib/activemq/bin >> /var/log/activemq/apel-sync
+
 # EOF
